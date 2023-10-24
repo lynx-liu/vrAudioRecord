@@ -7,15 +7,6 @@
 using namespace Streaming;
 using namespace android;
 
-int VrAudioRecord::setAudioParams(int sampleRate)
-{
-    m_sampleRateInHz = sampleRate;
-    m_audioFormat = AUDIO_FORMAT_PCM_16_BIT;
-    m_channelConfig = AUDIO_CHANNEL_IN_STEREO;
-    m_inputSource = AUDIO_SOURCE_REMOTE_SUBMIX;
-    return 0;
-}
-
 void VrAudioRecord::AudioRecordCallback(int event, void *user, void *info)
 {
     if (event == android::AudioRecord::EVENT_NEW_POS)
@@ -37,10 +28,10 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
 {
     size_t minFrameCount = 0;
 
+    m_sampleRateInHz = sampleRate;
     m_audioFormat = AUDIO_FORMAT_PCM_16_BIT;
     m_channelConfig = AUDIO_CHANNEL_IN_STEREO;
     m_inputSource = AUDIO_SOURCE_REMOTE_SUBMIX;
-
 
     status_t status = AudioRecord::getMinFrameCount(
         &minFrameCount, m_sampleRateInHz, m_audioFormat, m_channelConfig);

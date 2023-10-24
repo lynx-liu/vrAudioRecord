@@ -17,24 +17,41 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-	VrAudioRecord.cpp \
-	main.cpp
+	VrAudioRecord.cpp
 
 LOCAL_SHARED_LIBRARIES := \
 	libutils libcutils liblog \
- 	libmedia libaudioclient\
+ 	libmedia libaudioclient
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../inc/ \
 	$(TOP)/frameworks/av/include \
 	$(TOP)/frameworks/av/media/libmediametrics/include \
-	$(TOP)/frameworks/native/include/media/openmax \
-
+	$(TOP)/frameworks/native/include/media/openmax
 
 LOCAL_CFLAGS += -Wno-multichar -lrt -Wno-unused-parameter -Wno-unused-private-field -Wno-unused-variable
 #LOCAL_CFLAGS += -UNDEBUG
 
+# Define the output shared library module with the desired name
 LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE := libVrAudioRecord
 
-LOCAL_MODULE:= vrAudioRecord
+# Specify that this is a shared library
+include $(BUILD_SHARED_LIBRARY)
+
+# Create another module for the executable
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := main.cpp
+
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/../inc/
+
+# Set the output module name to vrAudioRecord
+LOCAL_MODULE := vrAudioRecord
+
+# Link against the previously built shared library
+LOCAL_SHARED_LIBRARIES := libVrAudioRecord
+
+# Specify that this is an executable
 include $(BUILD_EXECUTABLE)

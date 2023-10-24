@@ -32,8 +32,6 @@ namespace Streaming
 
         void closeAudioRecord(void) override;
 
-        int setAudioParams(int sampleRate);
-
         bool threadLoop(void);
 
         void setPcmDataCallback(const DataCallback &cb) override
@@ -66,9 +64,7 @@ namespace Streaming
         audio_format_t m_audioFormat = AUDIO_FORMAT_PCM_16_BIT;
         audio_channel_mask_t m_channelConfig = AUDIO_CHANNEL_IN_STEREO;
 
-        int m_sampleRateInHz = 16000;
-        int m_iBytesPerSample = 2;   // 16bits pcm, 2Bytes
-        int m_audio_iNbChannels = 2; // 1 channel for mono, 2 channel for stereo
+        int m_sampleRateInHz = 48000;
         int m_audio_frameSize = 1;
         int m_audio_bufferSizeInBytes = 0;
         int m_iNotificationPeriodInFrames = 0;
