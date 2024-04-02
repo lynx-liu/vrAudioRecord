@@ -18,7 +18,7 @@ int main(void)
 {
 	uint16_t sampleRate = 48000;
 
-    FILE* fp_pcm = fopen("/sdcard/audio.pcm", "wb");
+    FILE* fp_pcm = fopen("/sdcard/audio_dump.pcm", "wb");
     if (fp_pcm == nullptr) {
         printf("fopen failed\n");
     }

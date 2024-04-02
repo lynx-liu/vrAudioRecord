@@ -21,12 +21,9 @@ namespace Streaming
     class VrAudioRecord : public AudioRecordInterface
     {
     public:
-        VrAudioRecord(void){};
+        VrAudioRecord(void);
 
-        virtual ~VrAudioRecord()
-        {
-            ALOGD("~VrAudioRecord");
-        }
+        virtual ~VrAudioRecord();
 
         int initAudioRecord(uint16_t sampleRate) override;
 

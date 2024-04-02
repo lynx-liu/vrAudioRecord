@@ -7,6 +7,14 @@
 using namespace Streaming;
 using namespace android;
 
+VrAudioRecord::VrAudioRecord() {
+    m_AudioRecord = new android::AudioRecord(String16("Vrviu_audio_pcm"));
+}
+
+VrAudioRecord::~VrAudioRecord() {
+    m_AudioRecord = nullptr;
+}
+
 void VrAudioRecord::AudioRecordCallback(int event, void *user, void *info)
 {
     if (event == android::AudioRecord::EVENT_NEW_POS)
@@ -44,11 +52,14 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
     ALOGI("minFrameCount=%zu, m_audio_bufferSizeInBytes=%d\n", minFrameCount, m_audio_bufferSizeInBytes);
 
     m_iNotificationPeriodInFrames = m_sampleRateInHz / 10;
-    m_AudioRecord = new android::AudioRecord(String16("Vrviu_audio_pcm"));
     if (nullptr == m_AudioRecord)
     {
-        ALOGE("create native AudioRecord failed!\n");
-        return -1;
+        m_AudioRecord = new android::AudioRecord(String16("Vrviu_audio_pcm"));
+        if (nullptr == m_AudioRecord)
+        {
+            ALOGE("create native AudioRecord failed!\n");
+            return -1;
+        }
     }
 
     m_AudioRecord->set(m_inputSource,
@@ -61,7 +72,7 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
                        0,
                        true,
                        (audio_session_t)0);
-
+/*
     if (m_AudioRecord->initCheck() != android::NO_ERROR)
     {
         ALOGE("AudioTrack initCheck error!\n");
@@ -78,10 +89,11 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
         ALOGE("AudioTrack setPositionUpdatePeriod error!\n");
         return -3;
     }
-
+*/
     mPcmOutputBuf.resize(m_audio_bufferSizeInBytes, 0);
 
     std::thread t(&VrAudioRecord::threadLoop, this);
+    pthread_setname_np(t.native_handle(),"VrAudioRecord");
     t.detach();
 
     ALOGD("initRecord success, m_sampleRateInHz=%d, m_channelConfig=0x%x\n", m_sampleRateInHz, m_channelConfig);
@@ -150,6 +162,7 @@ bool VrAudioRecord::threadLoop(void)
     {
         readSize = m_AudioRecord->read(&mPcmOutputBuf[0], m_audio_bufferSizeInBytes);
         // ALOGD("readSize=%zu, m_audio_bufferSizeInBytes=%d\n", readSize, m_audio_bufferSizeInBytes);
+/*
         if (readSize == WOULD_BLOCK || readSize == BAD_VALUE)
         {
             ALOGE("read error, readSize=%zu\n", readSize);
@@ -160,8 +173,8 @@ bool VrAudioRecord::threadLoop(void)
         {
             continue;//mute
         }
-
-        if (mDataCallback != nullptr)
+*/
+        if (mDataCallback != nullptr && readSize > 0)
         {
             mDataCallback(reinterpret_cast<uint8_t *>(&mPcmOutputBuf[0]), readSize);
         }
