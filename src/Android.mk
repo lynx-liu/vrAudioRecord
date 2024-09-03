@@ -29,7 +29,7 @@ LOCAL_C_INCLUDES := \
 	$(TOP)/frameworks/av/media/libmediametrics/include \
 	$(TOP)/frameworks/native/include/media/openmax
 
-LOCAL_CFLAGS += -Wno-multichar -lrt -Wno-unused-parameter -Wno-unused-private-field -Wno-unused-variable
+LOCAL_CFLAGS += -Wno-multichar -Wno-unused-parameter -Wno-unused-private-field -Wno-unused-variable
 #LOCAL_CFLAGS += -UNDEBUG
 
 # Define the output shared library module with the desired name

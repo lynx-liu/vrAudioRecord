@@ -2,8 +2,6 @@
 
 #include "VrAudioRecord.h"
 
-#include <thread>
-
 using namespace Streaming;
 using namespace android;
 
@@ -12,7 +10,7 @@ VrAudioRecord::VrAudioRecord() {
 }
 
 VrAudioRecord::~VrAudioRecord() {
-    m_AudioRecord = nullptr;
+    closeAudioRecord();
 }
 
 void VrAudioRecord::AudioRecordCallback(int event, void *user, void *info)
@@ -52,10 +50,10 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
     ALOGI("minFrameCount=%zu, m_audio_bufferSizeInBytes=%d\n", minFrameCount, m_audio_bufferSizeInBytes);
 
     m_iNotificationPeriodInFrames = m_sampleRateInHz / 10;
-    if (nullptr == m_AudioRecord)
+    if (nullptr == m_AudioRecord.get())
     {
         m_AudioRecord = new android::AudioRecord(String16("Vrviu_audio_pcm"));
-        if (nullptr == m_AudioRecord)
+        if (nullptr == m_AudioRecord.get())
         {
             ALOGE("create native AudioRecord failed!\n");
             return -1;
@@ -76,11 +74,7 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
     if (m_AudioRecord->initCheck() != android::NO_ERROR)
     {
         ALOGE("AudioTrack initCheck error!\n");
-        if (m_AudioRecord != nullptr)
-        {
-            m_AudioRecord->stop();
-            m_AudioRecord = nullptr;
-        }
+        closeAudioRecord();
         return -1;
     }
 
@@ -92,9 +86,8 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
 */
     mPcmOutputBuf.resize(m_audio_bufferSizeInBytes, 0);
 
-    std::thread t(&VrAudioRecord::threadLoop, this);
-    pthread_setname_np(t.native_handle(),"VrAudioRecord");
-    t.detach();
+    audioRecordThread = new std::thread(&VrAudioRecord::threadLoop, this);
+    pthread_setname_np(audioRecordThread->native_handle(),"VrAudioRecord");
 
     ALOGD("initRecord success, m_sampleRateInHz=%d, m_channelConfig=0x%x\n", m_sampleRateInHz, m_channelConfig);
 
@@ -103,13 +96,21 @@ int VrAudioRecord::initAudioRecord(uint16_t sampleRate)
 
 void VrAudioRecord::closeAudioRecord(void)
 {
+    Mutex::Autolock _l(mMutex);
     mState = STOPPING;
 
-    if (m_AudioRecord != nullptr)
-    {
-        m_AudioRecord->stop();
+    if (audioRecordThread != nullptr && audioRecordThread->joinable()) {
+        audioRecordThread->join();
+        delete audioRecordThread;
+        audioRecordThread = nullptr;
     }
 
+    if (m_AudioRecord.get() != nullptr)
+    {
+        m_AudioRecord->stop();
+        m_AudioRecord.clear();
+        m_AudioRecord.~sp();
+    }
     mPcmOutputBuf.clear();
 }
 
@@ -147,7 +148,7 @@ bool VrAudioRecord::threadLoop(void)
 
     ALOGD("into threadLoop\n");
 
-    if (m_AudioRecord == nullptr)
+    if (m_AudioRecord.get() == nullptr)
     {
         return false;
     }
@@ -160,7 +161,14 @@ bool VrAudioRecord::threadLoop(void)
 
     while (mState == RUNNING)
     {
-        readSize = m_AudioRecord->read(&mPcmOutputBuf[0], m_audio_bufferSizeInBytes);
+        readSize = 0;
+        {
+             Mutex::Autolock _l(mMutex);
+             if(mState == RUNNING){
+                readSize = m_AudioRecord->read(&mPcmOutputBuf[0], m_audio_bufferSizeInBytes);
+             }
+        }
+
         // ALOGD("readSize=%zu, m_audio_bufferSizeInBytes=%d\n", readSize, m_audio_bufferSizeInBytes);
 /*
         if (readSize == WOULD_BLOCK || readSize == BAD_VALUE)

@@ -5,7 +5,7 @@
 #include <media/AudioRecord.h>
 
 #include <math.h>
-
+#include <thread>
 #include <errno.h>
 #include <vector>
 #include <iostream>
@@ -56,7 +56,7 @@ namespace Streaming
             STOPPED
         } mState;
 
-        android::AudioRecord *m_AudioRecord;
+        android::sp<android::AudioRecord> m_AudioRecord;
         audio_source_t m_inputSource = AUDIO_SOURCE_REMOTE_SUBMIX;
         audio_format_t m_audioFormat = AUDIO_FORMAT_PCM_16_BIT;
         audio_channel_mask_t m_channelConfig = AUDIO_CHANNEL_IN_STEREO;
@@ -65,7 +65,9 @@ namespace Streaming
         int m_audio_frameSize = 1;
         int m_audio_bufferSizeInBytes = 0;
         int m_iNotificationPeriodInFrames = 0;
-
+        // Guards all fields below.
+        Mutex mMutex;
+        std::thread *audioRecordThread = nullptr;
         std::vector<char> mPcmOutputBuf;
         DataCallback mDataCallback;
     };
